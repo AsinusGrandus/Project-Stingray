@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <button onclick=buttonPress()>BUTTON</button>
+</body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+	function buttonPress() {
+		$.ajax({
+			url: "/button",
+			success: function( data ) {
+				$("#state_line").text(data);
+			},
+			error: function () {
+				$("#state_line").text("Error");
+			}
+		});
+	}
+	</script>
+</html>
