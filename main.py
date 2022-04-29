@@ -1,4 +1,7 @@
 import webserver
+import config
 
 # Run the webserver
-webserver.startwebserver()
+Webserver = webserver.Webserver(port=config.PORT, devmode=True, daemon=True)
+if __name__ == '__main__':
+    Webserver.startWebServer()
