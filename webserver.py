@@ -37,14 +37,10 @@ class LoginHandler(tornado.web.RequestHandler):
 
     def post(self):
         print(self.get_argument("name"))
-<<<<<<< HEAD
         global webserver
         webserver.runCallback()
         self.redirect("/")
 
-=======
-        self.redirect("/")
->>>>>>> e9c99e291ce04ead2cb68d58cbf4496fca4e86bb
         #self.set_secure_cookie("user", self.get_argument("name"))
         #self.redirect("/")
 
@@ -74,18 +70,12 @@ class Webserver(multiprocessing.Process):
         self.debug = self.devmode
         self.autoreload = self.devmode
 
-<<<<<<< HEAD
-        self.certPath = None
-        self.keyPath = None
-        self.function = None
-=======
         self.port = 5000
         self.certPath = None
         self.keyPath = None
 
     def setPort(self, port: int) -> None:
         self.port = port        
->>>>>>> e9c99e291ce04ead2cb68d58cbf4496fca4e86bb
 
     def addSSL(self, certPath : str = None, keyPath : str = None):
         self.certPath = certPath
