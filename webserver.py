@@ -2,6 +2,7 @@
 import multiprocessing
 
 # Pip installs
+import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
@@ -26,6 +27,23 @@ import tornado.websocket
 class DefaultHandler(tornado.web.RequestHandler):
     def get(self) -> None:
         self.render("html-pages/index.html")
+
+class ResultHandler(tornado.web.RequestHandler):
+    def get(self) -> None:
+        self.render("html-pages/button.html")
+
+class LoginHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write('<html><body><form action="/test" method="post">'
+                   'Name: <input type="text" name="name">'
+                   '<input type="submit" value="Sign in">'
+                   '</form></body></html>')
+
+    def post(self):
+        print(self.get_argument("name"))
+        self.redirect("/result")
+        #self.set_secure_cookie("user", self.get_argument("name"))
+        #self.redirect("/")
 
 class ButtonHandler(tornado.web.RequestHandler):
     # https://www.acmesystems.it/tornado_web_server_python_led
@@ -52,14 +70,20 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
 class Webserver(multiprocessing.Process):
 
-    def __init__(self, port : int, devmode : bool = False, daemon : bool = True) -> None:
+    def __init__(self, port : int,
+                devmode : bool = False, daemon : bool = True) -> None:
 
         multiprocessing.Process.__init__(self, daemon=daemon)
 
         self.port = port
+
         self.devmode = devmode
         self.debug = self.devmode
         self.autoreload = self.devmode
+
+    def addSSL(self, certPath : str = None, keyPath : str = None):
+        self.certPath = certPath
+        self.keyPath = keyPath
 
     def startWebServer(self) -> None:
         self.start()
@@ -72,13 +96,25 @@ class Webserver(multiprocessing.Process):
         return tornado.web.Application([
             (r"/", DefaultHandler),
             (r"/ws", WebSocketHandler),
+            (r"/test", LoginHandler),
+            (r"/result", ResultHandler),
         ], 
         debug = self.debug,
         autoreload = self.autoreload)
 
     def __startWebServer(self) -> None:
-        app = self.__create_app()
-        app.listen(self.port)
+        application = self.__create_app()
+
+        if self.certPath and self.keyPath != None:
+            http_server = tornado.httpserver.HTTPServer(application, ssl_options={
+            "certfile": self.certPath,
+            "keyfile": self.keyPath,
+            })
+        else:
+            http_server = tornado.httpserver.HTTPServer(application)
+            print("WARNING: SERVER RUNNING WITHOUT SSL")
+
+        http_server.listen(self.port)
         print(f'Server is online on port {self.port}')
 
         # Start the server
