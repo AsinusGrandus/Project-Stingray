@@ -77,7 +77,7 @@ class Webserver(multiprocessing.Process):
             })
         else:
             http_server = tornado.httpserver.HTTPServer(application)
-            print("WARNING: SERVER RUNNING WITHOUT SSL")
+            print("\x1b[33;20m[WARNING]: SERVER RUNNING WITHOUT SSL\x1b[0m")
 
         http_server.listen(self.port)
         print(f'Server is online on port {self.port}')
