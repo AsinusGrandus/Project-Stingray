@@ -41,7 +41,10 @@ class LoginHandler(tornado.web.RequestHandler):
 
     def post(self):
         print(self.get_argument("name"))
-        self.redirect("/result")
+        global webserver
+        webserver.runCallback()
+        self.redirect("/")
+
         #self.set_secure_cookie("user", self.get_argument("name"))
         #self.redirect("/")
 
@@ -81,9 +84,19 @@ class Webserver(multiprocessing.Process):
         self.debug = self.devmode
         self.autoreload = self.devmode
 
+        self.certPath = None
+        self.keyPath = None
+        self.function = None
+
     def addSSL(self, certPath : str = None, keyPath : str = None):
         self.certPath = certPath
         self.keyPath = keyPath
+
+    def addCallback(self, functionszz):
+        self.function = functionszz
+
+    def runCallback(self):
+        self.function()
 
     def startWebServer(self) -> None:
         self.start()
@@ -118,5 +131,10 @@ class Webserver(multiprocessing.Process):
         print(f'Server is online on port {self.port}')
 
         # Start the server
-
+        global webserver
+        webserver = self
         tornado.ioloop.IOLoop.current().start()
+
+
+
+webserver : Webserver
