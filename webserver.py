@@ -8,11 +8,15 @@ import tornado.web
 import tornado.websocket
 
 # Local imports
+import loggingformatter as lf
+
 
 
 # NOTES:
 # https:// -> wss://
 # http:// -> ws://
+
+
 
 # Create the Webserver class
 class Webserver(multiprocessing.Process):
@@ -77,7 +81,7 @@ class Webserver(multiprocessing.Process):
             })
         else:
             http_server = tornado.httpserver.HTTPServer(application)
-            print("\x1b[33;20m[WARNING]: SERVER RUNNING WITHOUT SSL\x1b[0m")
+            print(lf.format("SERVER RUNNING WITHOUT SSL", lf.Warninglevels.WARNING))
 
         http_server.listen(self.port)
         print(f'Server is online on port {self.port}')
