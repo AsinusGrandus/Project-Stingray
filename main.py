@@ -7,8 +7,9 @@ Webserver = webserver.Webserver(devmode=True, daemon=True)
 Webserver.setPort(config.PORT)
 # Webserver.addSSL(certPath=config.CERT_PATH, keyPath=config.KEY_PATH,)
 
+
 def testfunc() -> None:
-    print("loopback")
+    print()
 
 Webserver.addCallback(testfunc)
 

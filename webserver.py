@@ -14,50 +14,6 @@ import tornado.websocket
 # https:// -> wss://
 # http:// -> ws://
 
-# class TestHandler(tornado.web.RequestHandler):
-#     def get(self):
-#         self.write("Test")
-#         # # Render html file
-#         # self.render("file.html")
-
-#         # # Use variable
-#         # variable = self.get_argument("variable")
-#         # self.render("home.html", variable=variable)
-
-class IndexHandler(tornado.web.RequestHandler):
-    def get(self) -> None:
-        self.render("html-pages/index.html")
-
-class LoginHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write('<html><body><form action="/test" method="post">'
-                   'Name: <input type="text" name="name">'
-                   '<input type="submit" value="Sign in">'
-                   '</form></body></html>')
-
-    def post(self):
-        print(self.get_argument("name"))
-        global webserver
-        webserver.runCallback()
-        self.redirect("/")
-
-        #self.set_secure_cookie("user", self.get_argument("name"))
-        #self.redirect("/")
-
-class WebSocketHandler(tornado.websocket.WebSocketHandler):
-    def open(self):
-        print("WebSocket opened")
-
-    def on_message(self, message):
-        print(f"received: {message}")
-        self.write_message(u"You said: " + message)
-        if message == "exit":
-            exit()
-
-    def on_close(self):
-        print("WebSocket closed")
-
-
 # Create the Webserver class
 class Webserver(multiprocessing.Process):
 
@@ -96,15 +52,15 @@ class Webserver(multiprocessing.Process):
         self.start()
         self.join()
 
-    # Because Webserver is a child from multiprocessing.Process, run() is the function that gets ran (@FVHCreations explain better)
+    # Define run statement (needed for multiprocessing.Process subclassing)
     def run(self) -> None:
         self.__startWebServer()
     
     # Create the web app
     def __create_app(self) -> tornado.web.Application:
         return tornado.web.Application([
-            (r"/", IndexHandler),
-            (r"/ws", WebSocketHandler),
+            (r"/", TestHandler, dict(Parent=self)),
+            (r"/ws", WebSocketHandler, dict(Parent=self)),
             (r"/test", LoginHandler),
         ], 
         debug = self.debug,
@@ -127,10 +83,55 @@ class Webserver(multiprocessing.Process):
         print(f'Server is online on port {self.port}')
 
         # Start the server
-        global webserver
-        webserver = self
         tornado.ioloop.IOLoop.current().start()
 
 
 
-webserver : Webserver
+class IndexHandler(tornado.web.RequestHandler):
+    def initialize(self, Parent : Webserver) -> None:
+        self.parent = Parent
+
+    def get(self) -> None:
+        self.render("html-pages/index.html")
+
+class LoginHandler(tornado.web.RequestHandler):
+    def initialize(self, Parent : Webserver) -> None:
+        self.parent = Parent
+
+    def get(self) -> None:
+        self.write('<html><body><form action="/test" method="post">'
+                   'Name: <input type="text" name="name">'
+                   '<input type="submit" value="Sign in">'
+                   '</form></body></html>')
+
+    def post(self) -> None:
+        print(self.get_argument("name"))
+        self.redirect("/")
+
+        #self.set_secure_cookie("user", self.get_argument("name"))
+        #self.redirect("/")
+
+class TestHandler(tornado.web.RequestHandler):
+    def initialize(self, Parent : Webserver) -> None:
+        self.parent = Parent
+
+    def get(self) -> None:
+        self.parent.runCallback()
+        self.render("html-pages/index.html")
+        
+
+class WebSocketHandler(tornado.websocket.WebSocketHandler):
+    def initialize(self, Parent : Webserver) -> None:
+        self.parent = Parent
+
+    def open(self) -> None:
+        print("WebSocket opened")
+
+    def on_message(self, message) -> None:
+        print(f"received: {message}")
+        self.write_message(u"You said: " + message)
+        if message == "exit":
+            exit()
+
+    def on_close(self) -> None:
+        print("WebSocket closed")
