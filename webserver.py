@@ -58,7 +58,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         print("WebSocket closed")
 
 
-
+# Create the Webserver class
 class Webserver(multiprocessing.Process):
 
     def __init__(self,
@@ -66,34 +66,42 @@ class Webserver(multiprocessing.Process):
 
         multiprocessing.Process.__init__(self, daemon=daemon)
 
+        # Process init variables
         self.devmode = devmode
         self.debug = self.devmode
         self.autoreload = self.devmode
 
+        # Prepare other variables
         self.port = 5000
         self.certPath = None
         self.keyPath = None
 
+    # Function to customise the port 
     def setPort(self, port: int) -> None:
         self.port = port        
 
+    # Add SSL to the webserver
     def addSSL(self, certPath : str = None, keyPath : str = None):
         self.certPath = certPath
         self.keyPath = keyPath
 
+    # Test functions for callbacks
     def addCallback(self, functionszz):
         self.function = functionszz
 
     def runCallback(self):
         self.function()
 
+    # Start the webserver
     def startWebServer(self) -> None:
         self.start()
         self.join()
 
+    # Because Webserver is a child from multiprocessing.Process, run() is the function that gets ran (@FVHCreations explain better)
     def run(self) -> None:
         self.__startWebServer()
     
+    # Create the web app
     def __create_app(self) -> tornado.web.Application:
         return tornado.web.Application([
             (r"/", IndexHandler),
@@ -103,6 +111,7 @@ class Webserver(multiprocessing.Process):
         debug = self.debug,
         autoreload = self.autoreload)
 
+    # Private function to start the webserver
     def __startWebServer(self) -> None:
         application = self.__create_app()
 
