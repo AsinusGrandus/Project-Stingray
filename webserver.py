@@ -24,13 +24,9 @@ import tornado.websocket
 #         # variable = self.get_argument("variable")
 #         # self.render("home.html", variable=variable)
 
-class DefaultHandler(tornado.web.RequestHandler):
+class IndexHandler(tornado.web.RequestHandler):
     def get(self) -> None:
         self.render("html-pages/index.html")
-
-class ResultHandler(tornado.web.RequestHandler):
-    def get(self) -> None:
-        self.render("html-pages/button.html")
 
 class LoginHandler(tornado.web.RequestHandler):
     def get(self):
@@ -41,19 +37,9 @@ class LoginHandler(tornado.web.RequestHandler):
 
     def post(self):
         print(self.get_argument("name"))
-        self.redirect("/result")
+        self.redirect("/")
         #self.set_secure_cookie("user", self.get_argument("name"))
         #self.redirect("/")
-
-class ButtonHandler(tornado.web.RequestHandler):
-    # https://www.acmesystems.it/tornado_web_server_python_led
-    def get(self) -> None:
-        print("Button pressed")
-
-class VariableHandler(tornado.web.RequestHandler):
-    def get(self) -> None:
-        variable = self.get_argument("variable")
-        self.render("html-pages/variable.html", variable=variable)
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self):
@@ -62,6 +48,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         print(f"received: {message}")
         self.write_message(u"You said: " + message)
+        if message == "exit":
+            exit()
 
     def on_close(self):
         print("WebSocket closed")
@@ -70,16 +58,21 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
 class Webserver(multiprocessing.Process):
 
-    def __init__(self, port : int,
+    def __init__(self,
                 devmode : bool = False, daemon : bool = True) -> None:
 
         multiprocessing.Process.__init__(self, daemon=daemon)
 
-        self.port = port
-
         self.devmode = devmode
         self.debug = self.devmode
         self.autoreload = self.devmode
+
+        self.port = 5000
+        self.certPath = None
+        self.keyPath = None
+
+    def setPort(self, port: int) -> None:
+        self.port = port        
 
     def addSSL(self, certPath : str = None, keyPath : str = None):
         self.certPath = certPath
@@ -94,10 +87,9 @@ class Webserver(multiprocessing.Process):
     
     def __create_app(self) -> tornado.web.Application:
         return tornado.web.Application([
-            (r"/", DefaultHandler),
+            (r"/", IndexHandler),
             (r"/ws", WebSocketHandler),
             (r"/test", LoginHandler),
-            (r"/result", ResultHandler),
         ], 
         debug = self.debug,
         autoreload = self.autoreload)
