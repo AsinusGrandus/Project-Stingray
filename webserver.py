@@ -81,10 +81,10 @@ class Webserver(multiprocessing.Process):
         self.certPath = certPath
         self.keyPath = keyPath
 
-    def addCallback(self, functionszz):
-        self.function = functionszz
+    def addCallback(self, functions) -> None:
+        self.function = functions
 
-    def runCallback(self):
+    def runCallback(self) -> None:
         self.function()
 
     def startWebServer(self) -> None:
