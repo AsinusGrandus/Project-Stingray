@@ -54,8 +54,8 @@ class Webserver(multiprocessing.Process):
         self.keyPath = keyPath
 
     # Add a page to the webserver
-    def addPage(self, page : pages.Page, url):
-        page = (url, page, dict(ParentServer=self))
+    def addPage(self, page : pages.Page, url : str, html : str, name : str = "", protected : bool = False, callback = ""):
+        page = (url, page, dict(ParentServer=self, Name=name, Protected=protected, Callback=callback, HTML=html))
         self.pages.append(page)
 
     # Set a custom url for the login page

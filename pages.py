@@ -14,13 +14,12 @@ class BaseHandler(tornado.web.RedirectHandler):
 
 class Page(BaseHandler):
 
-    def initialize(self, ParentServer) -> None:
+    def initialize(self, ParentServer, Name, Protected, Callback, HTML) -> None:
         self.ParentServer = ParentServer
-        self.name : str
-        self.Protected : bool
-        self.callback : function
-        self.html : str
-        self.html_ISFILE : bool = False
+        self.name = Name
+        self.Protected = Protected
+        self.callback = Callback
+        self.html = HTML
     
     def get(self) -> None:
         if (not self.current_user) and self.Protected:
@@ -28,12 +27,13 @@ class Page(BaseHandler):
             self.redirect(url)
         else:
             if self.html != None:
-                if self.html_ISFILE:
+                if self.html[-5:] == ".html":
                     self.render(self.html)
                 else:
                     self.write(self.html)
             else:
                 lf.notify(f"NO HTML GIVEN FOR PAGE '{self.name}'",lf.Warninglevels.ERROR)
+        if self.callback != "": self.callback()
 
 
 class LoginHandler(tornado.web.RequestHandler):
