@@ -1,5 +1,9 @@
-
+# Standard libs
 from enum import Enum
+
+# Local Imports
+import config
+
 
 class Warninglevels(Enum):
     DEBUG = 0
@@ -9,22 +13,25 @@ class Warninglevels(Enum):
     CRIT_ERROR = 4
 
 
+ShowDebug = config.SHOWDEBUG
+
 grey = "\x1b[38;20m"
 yellow = "\x1b[33;20m"
 red = "\x1b[31;20m"
 bold_red = "\x1b[31;1m"
 reset = "\x1b[0m"
 
-def format(string : str, level : Warninglevels = Warninglevels.CRIT_ERROR) -> str:
+def notify(string : str, level : Warninglevels = Warninglevels.CRIT_ERROR) -> None:
     if level == Warninglevels.DEBUG:
-        return grey + "[DEBUG]: " + string + reset
+        if ShowDebug:
+            print(grey + "[DEBUG]: " + string + reset)
     elif level == Warninglevels.INFO:
-        return grey + "[INFO]: " + string + reset
+        print(grey + "[INFO]: " + string + reset)
     elif level == Warninglevels.WARNING:
-        return yellow + "[WARNING]: " + string + reset 
+        print(yellow + "[WARNING]: " + string + reset) 
     elif level == Warninglevels.ERROR:
-        return red + "[ERROR]: " + string + reset
+        print(red + "[ERROR]: " + string + reset)
     elif level == Warninglevels.CRIT_ERROR:
-        return bold_red + "[CRITICAL ERROR]: " + string + reset
+        print(bold_red + "[CRITICAL ERROR]: " + string + reset)
     else:
         raise ValueError("Invalid warning level")

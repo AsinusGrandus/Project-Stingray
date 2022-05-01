@@ -55,7 +55,7 @@ docs/_build/
 
 # PyBuilder
 target/
-SSL/ssl.key
-SSL/ssl.cert
+SSL/key.pem
+SSL/cert.pem
 notes.txt
 Additional scripts/certgen.py
