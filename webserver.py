@@ -38,6 +38,7 @@ class Webserver(multiprocessing.Process):
         self.certPath = None
         self.keyPath = None
         self.pages = []
+        self.callbacks = {}
         self.settings = {
         "cookie_secret": C.Fernet.generate_key() + C.Fernet.generate_key() + C.Fernet.generate_key() + C.Fernet.generate_key(),
         "login_url": "/login",
@@ -52,21 +53,26 @@ class Webserver(multiprocessing.Process):
         self.certPath = certPath
         self.keyPath = keyPath
 
+    # Add a page to the webserver
     def addPage(self, page : pages.Page, url):
         page = (url, page, dict(ParentServer=self))
         self.pages.append(page)
 
+    # Set a custom url for the login page
     def setCustomLoginURL(self, url : str):
         self.settings["login_url"] = url
 
+    def addCallbacks(self, name : str, function, callbacks : dict = None) -> None:
+        if callbacks == None:
+            self.callbacks[name] = function
+        else:
+            keys = callbacks.keys()
+            for x in keys:
+                self.callbacks[x] = callbacks[x]
 
-    ##################################################### WIP ################################################
-    def addCallback(self, functions) -> None:
-        self.function = functions
 
-    def runCallback(self) -> None:
-        self.function()
-    ##################################################### ENDWIP #############################################
+    def runCallback(self, name : str) -> None:
+        self.callbacks[name]()
 
     # Start the webserver
     def startWebServer(self) -> None:
