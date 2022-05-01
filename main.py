@@ -1,6 +1,7 @@
 
 # Local imports
-import webserver
+from webserver import Webserver as ws
+from pages import Page, LoginPage
 import config
 import loggingformatter as lf
 
@@ -15,10 +16,14 @@ def testfunc() -> None:
 #Webserver.addCallback(testfunc)
 
 if __name__ == "__main__":
-    Webserver = webserver.Webserver(devmode=False, daemon=True)
-    print("hollo")
+    Webserver = ws(devmode=True, daemon=True)
     Webserver.setPort(config.PORT)
-    testpage = webserver.pages.Page
-    Webserver.addPage(testpage, r"/", "<html><body><h1>testpageeeee</h1></body></html>", "geit", callback=testfunc)
-    #Webserver.addPage(webserver.pages.LoginHandler,r"/login")
+    testpage = Page
+    loginpage = LoginPage
+    protectedPage = Page
+    testhtml = "<html><body><h1>testpage</h1></body></html>"
+    test2html = "<html><body><h1>Protected access</h1></body></html>"
+    Webserver.addPage(testpage, r"/", testhtml, "geit", callback=testfunc)
+    Webserver.addPage(loginpage, r"/login", testhtml)
+    Webserver.addPage(protectedPage, r"/protected", test2html, protected=True)
     Webserver.startWebServer()
