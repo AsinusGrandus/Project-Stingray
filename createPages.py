@@ -1,113 +1,164 @@
-# element: id and class=""
-# 
-
-#  NOT FINAL IN ANY WAY!
-
 class RangeError(Exception):
     pass
 
 class Page():
     def __init__(self, export_to_document : bool = False) -> None:
-        self.Elements = {}
-    
-    def createHtmlPage(self):
-        print(self.Elements.keys())
-        print(sorted(list(self.Elements.keys())))
-        Htmlpage = ""
-        sorted_keys = sorted(list(self.Elements.keys()))
-        for key in sorted_keys:
-            Htmlpage += self.Elements[key]
-        print(Htmlpage)
-        return Htmlpage
+        self.export_to_document = export_to_document
 
+        self.HeadElements = {}
+        self.BodyElements = {}
+
+        self.customStyle = False
+        self.StyleElements = {}
+        self.stylesheet = "default"
+
+        self.title = "Title"
+        self.style = ""
+        self.head = ""
+        self.body = ""
+
+        self.raw_html: str
+
+    def setStyle(self, stylesheet : str) -> None:
+        self.customStyle = True
+        self.stylesheet = stylesheet
+        self.HeadElements[0] = f'<link rel="stylesheet" href="{self.stylesheet}">'
+
+    def addStyle(self, name : str, css : str, htmltype = None) -> None:
+        key = name if htmltype == "class" else f'#{name}'
+        self.StyleElements[key] = css
+
+    def get_html(self) -> str:
+        sortedHead = sorted(list(self.HeadElements.keys()))
+        if len(sortedHead) == 0: self.head = ""
+        for key in sortedHead:
+            self.head += "\n\t" + self.HeadElements[key]
+        
+        sortedBody = sorted(list(self.BodyElements.keys()))
+        if len(sortedBody) == 0: self.body = ""
+        for key in sortedBody:
+            self.body += "\n\t" + self.BodyElements[key]
+
+        if not self.customStyle:
+            sortedStyle = sorted(list(self.StyleElements.keys()))
+            if len(sortedStyle) == 0: self.style = ""
+            for key in sortedStyle:
+                self.style += '\n\t\t' + key + ' {' + self.StyleElements[key] + ';}' + '\n'
+            self.head += f'<style>{self.style}\t</style>'
+
+        self.raw_html = f"""<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{self.title}</title>
+    {self.head}
+</head>
+<body>{self.body}
+</body>
+""" 
+        if self.export_to_document:
+            path = fr"html-pages\{self.title}.html"
+            with open(path, "w") as f:
+                f.write(self.raw_html)
+            return path
+
+        return self.raw_html
 
 class Element():
     def __init__(self) -> None:
         self.row : int
-        self.id : str
         self.html : str
 
     def setPosition(self, row : int) -> None:
         if row < 0: raise RangeError("The row number must be 0 or higher")
         self.row = row
 
-    def setInfo(self, Htmlid : str = "", Htmlclass : str = "") -> None:
-        self.Htmlid = Htmlid
-        self.Htmlclass = Htmlclass 
+    # def setInfo(self, Htmlid : str = "", Htmlclass : str = "") -> None:
+    #     self.Htmlid = Htmlid
+    #     self.Htmlclass = Htmlclass 
     
     def closeTag(self, tag : str) -> str:
         return "</" + tag[1:]
     
     def add_to(self, page : Page):
-        page.Elements[self.row] = self.html
-    
+        page.BodyElements[self.row] = self.html
 
 class Text(Element):
-    # <h1>This is heading 1</h1>
-    # <h2>This is heading 2</h2>
-    # <h3>This is heading 3</h3>
-    # <h4>This is heading 4</h4>
-    # <h5>This is heading 5</h5>
-    # <h6>This is heading 6</h6>
-
-    # <p>This is a paragraph</p>
-
-    # Add bold, italic...
-    def __init__(self, text : str, header : bool = False, size : int = -1) -> None:
+    def __init__(self, text : str, header : int = -1, htmlid: str = "", htmlclass : str = "") -> None:
         super().__init__()
 
-        if header and size < 0 or size > 6: raise RangeError("Text size must be a number between 0 and 6")
-        if header: self.tag = f"<h{size}>"
+        self.htmlid = htmlid
+        self.htmlclass = htmlclass
 
+        if header > 6: raise RangeError("Text size must be a number between 0 and 6")
+        
         self.text = text.replace("\n", "<br>")
 
-        self.tag = "<p>"
+        self.tag = f'<p>' if header < 0 else f'<h{header}>'
         self.closeTag = super().closeTag(self.tag)
-
-        self.html = self.tag + self.text + self.closeTag
+        cut = 2 if self.tag == "<p>" else 3
+        self.tag = self.tag[:cut] + f' id="{self.htmlid}" class="{self.htmlclass}"' + self.tag[cut:]
+        self.html = f"{self.tag}{self.text}{self.closeTag}"
 
 
 
 class Image(Element):
-    # <img src="imagePath" alt="altText" width="104" height="142">
-    def __init__(self, imagePath, size : tuple, altText : str = "Image") -> None:
+    def __init__(self, source, size : tuple, altText : str = "Image") -> None:
         super().__init__()
 
-        self.imagePath = imagePath
+        self.source = source
         self.altText = altText
         self.size = size
         self.width, self.heigt = self.size
 
-        self.html = f'<img src="{imagePath}" alt="{self.altText}" width="{self.width}" heigth="{self.heigt}">'
+        self.html = f'<img src="{self.source}" alt="{self.altText}" width="{self.width}" heigth="{self.heigt}" id="{self.Htmlid}" class="{self.Htmlclass}">'
 
 
 class Link(Element):
-    # <a href="url">text</a>
-    def __init__(self, element : Element, url : str) -> None:
+    def __init__(self, text : Element, url : str) -> None:
         super().__init__()
 
-        self.element = element
+        self.text = text
         self.url = url
 
-        self.html = f'<a href="{self.url}">{self.element}</a>'
+        self.html = f'<a href="{self.url}">{self.text}</a>'
 
-pagina = Page()
+class Frame(Element):
+    def __init__(self, source, size: tuple, title: str = "Frame") -> None:
+        super().__init__()
 
-lbl1 = Text("Label 1", header=True, size=2)
-lbl1.setPosition(0)
-lbl1.add_to(pagina)
+        self.source = source
+        self.title = title
+        self.size = size
+        self.width, self.heigt = self.size
 
-lbl2 = Text("Label 2")
-lbl2.setPosition(1)
-lbl2.add_to(pagina)
+        self.html = f'<iframe src="{self.source}" height="{self.heigt}" width="{self.width}" title="{self.title}" id="{self.Htmlid}" class="{self.Htmlclass}"></iframe>'
 
-lnk = Link("This is a link", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-lnk.setPosition(2)
-lnk.add_to(pagina)
 
-img = Image("favicon.png", (64,64))
-img.setPosition(3)
-img.add_to(pagina)
+Webpage1 = Page(export_to_document=True)
+# Webpage.setStyle("style.css")
+Webpage1.title = "Title"
 
-print(pagina.Elements)
-pagina.createHtmlPage()
+Webpage1.addStyle("blue-text", "color: blue")
+
+text1 = Text("This is some text.", header=2)
+text1.setPosition(0)
+text1.add_to(Webpage1)
+
+text2 = Text("This is some other text.", htmlid="blue-text")
+text2.setPosition(1)
+
+text2.add_to(Webpage1)
+
+# link = Link("This is a link which you shouldn't click.", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+# link.setPosition(2)
+# link.add_to(Webpage1)
+
+# imgage = Image("favicon.png", (64,64))
+# imgage.setPosition(5)
+# imgage.add_to(Webpage1)
+
+# frame = Frame("https://www.youtube.com/embed/dQw4w9WgXcQ", (942,530))
+# frame.setPosition(4)
+# frame.add_to(Webpage1)
+
+print(Webpage1.get_html())
