@@ -1,5 +1,4 @@
-class RangeError(Exception):
-    pass
+import loggingformatter as lf
 
 class htmlPage():
     def __init__(self, export_to_document : bool = False) -> None:
@@ -146,8 +145,8 @@ class Element():
             None
         """
         if row < 0: 
-            # LOGG
-            raise RangeError("The row number must be 0 or higher")
+            lf.notify("ROW SHOULD BE > 0", lf.Warninglevels.ERROR)
+
         # Give the row value to the variable
         self.row = row
 
@@ -195,9 +194,9 @@ class Text(Element):
         self.htmlclass = htmlclass
 
         # If the header value is greater then 6, make it 6
-        # LOGG
+
         self.header = 6 if header > 6 else header
-        
+        lf.notify("MAX HEADER VALUE IS 6", lf.Warninglevels.WARNING)
         # Replace line breaks with the html line break element
         self.text = text.replace("\n", "<br>")
 
