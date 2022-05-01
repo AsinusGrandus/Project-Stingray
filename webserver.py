@@ -1,15 +1,17 @@
 # Standard libs
 import multiprocessing
+import os
 
 # Pip installs
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+import cryptography.fernet as C
 
 # Local imports
 import loggingformatter as lf
-
+import pages
 
 
 # NOTES:
@@ -35,21 +37,42 @@ class Webserver(multiprocessing.Process):
         self.port = 5000
         self.certPath = None
         self.keyPath = None
+        self.pages = []
+        self.callbacks = {}
+        self.settings = {
+        "cookie_secret": C.Fernet.generate_key() + C.Fernet.generate_key() + C.Fernet.generate_key() + C.Fernet.generate_key(),
+        "login_url": "/login",
+        }
 
     # Function to customise the port 
     def setPort(self, port: int) -> None:
-        self.port = port        
+        self.port = port  
 
     # Add SSL to the webserver
     def addSSL(self, certPath : str = None, keyPath : str = None):
         self.certPath = certPath
         self.keyPath = keyPath
 
-    def addCallback(self, functions) -> None:
-        self.function = functions
+    # Add a page to the webserver
+    def addPage(self, page : pages.Page, url):
+        page = (url, page, dict(ParentServer=self))
+        self.pages.append(page)
 
-    def runCallback(self) -> None:
-        self.function()
+    # Set a custom url for the login page
+    def setCustomLoginURL(self, url : str):
+        self.settings["login_url"] = url
+
+    def addCallbacks(self, name : str, function, callbacks : dict = None) -> None:
+        if callbacks == None:
+            self.callbacks[name] = function
+        else:
+            keys = callbacks.keys()
+            for x in keys:
+                self.callbacks[x] = callbacks[x]
+
+
+    def runCallback(self, name : str) -> None:
+        self.callbacks[name]()
 
     # Start the webserver
     def startWebServer(self) -> None:
@@ -62,13 +85,12 @@ class Webserver(multiprocessing.Process):
     
     # Create the web app
     def __create_app(self) -> tornado.web.Application:
-        return tornado.web.Application([
-            (r"/", TestHandler, dict(Parent=self)),
-            (r"/ws", WebSocketHandler, dict(Parent=self)),
-            (r"/test", LoginHandler),
-        ], 
+        return tornado.web.Application(
+        self.pages, 
         debug = self.debug,
-        autoreload = self.autoreload)
+        autoreload = self.autoreload,
+        **self.settings
+        )
 
     # Private function to start the webserver
     def __startWebServer(self) -> None:
@@ -81,61 +103,30 @@ class Webserver(multiprocessing.Process):
             })
         else:
             http_server = tornado.httpserver.HTTPServer(application)
-            print(lf.format("SERVER RUNNING WITHOUT SSL", lf.Warninglevels.WARNING))
+            lf.notify("SERVER RUNNING WITHOUT SSL", lf.Warninglevels.WARNING)
 
         http_server.listen(self.port)
-        print(f'Server is online on port {self.port}')
+        lf.notify(f'Server is online on port {self.port}', lf.Warninglevels.INFO)
 
         # Start the server
         tornado.ioloop.IOLoop.current().start()
 
+    ##################################################### WIP ################################################
+    class WebSocketHandler(tornado.websocket.WebSocketHandler):
+        def initialize(self, Parent) -> None:
+            self.parent = Parent
 
+        def open(self) -> None:
+            lf.notify("WebSocket opened", lf.Warninglevels.DEBUG)
 
-class IndexHandler(tornado.web.RequestHandler):
-    def initialize(self, Parent : Webserver) -> None:
-        self.parent = Parent
+        def on_message(self, message) -> None:
+            lf.notify(f"ws received: {message}", lf.Warninglevels.DEBUG)
 
-    def get(self) -> None:
-        self.render("html-pages/index.html")
+            # self.write_message(u"You said: " + message)
+            # if message == "exit":
+            #     exit()
 
-class LoginHandler(tornado.web.RequestHandler):
-    def initialize(self, Parent : Webserver) -> None:
-        self.parent = Parent
+        def on_close(self) -> None:
+            lf.notify("WebSocket closed", lf.Warninglevels.DEBUG)
 
-    def get(self) -> None:
-        self.write('<html><body><form action="/test" method="post">'
-                   'Name: <input type="text" name="name">'
-                   '<input type="submit" value="Sign in">'
-                   '</form></body></html>')
-
-    def post(self) -> None:
-        print(self.get_argument("name"))
-        self.redirect("/")
-
-        #self.set_secure_cookie("user", self.get_argument("name"))
-        #self.redirect("/")
-
-class TestHandler(tornado.web.RequestHandler):
-    def initialize(self, Parent : Webserver) -> None:
-        self.parent = Parent
-
-    def get(self) -> None:
-        self.parent.runCallback()
-        self.render("html-pages/index.html")
-        
-
-class WebSocketHandler(tornado.websocket.WebSocketHandler):
-    def initialize(self, Parent : Webserver) -> None:
-        self.parent = Parent
-
-    def open(self) -> None:
-        print("WebSocket opened")
-
-    def on_message(self, message) -> None:
-        print(f"received: {message}")
-        self.write_message(u"You said: " + message)
-        if message == "exit":
-            exit()
-
-    def on_close(self) -> None:
-        print("WebSocket closed")
+    ##################################################### ENDWIP #############################################
