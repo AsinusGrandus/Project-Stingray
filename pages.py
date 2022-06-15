@@ -14,13 +14,12 @@ class BaseHandler(tornado.web.RedirectHandler):
 
 class Page(BaseHandler):
 
-    def initialize(self, ParentServer) -> None:
+    def initialize(self, ParentServer, Name, Protected, Callback, HTML) -> None:
         self.ParentServer = ParentServer
-        self.name : str
-        self.Protected : bool
-        self.callback : function
-        self.html : str
-        self.html_ISFILE : bool = False
+        self.name = Name
+        self.Protected = Protected
+        self.callback = Callback
+        self.html = HTML
     
     def get(self) -> None:
         if (not self.current_user) and self.Protected:
@@ -28,31 +27,27 @@ class Page(BaseHandler):
             self.redirect(url)
         else:
             if self.html != None:
-                if self.html_ISFILE:
+                if self.html[-5:] == ".html":
                     self.render(self.html)
                 else:
                     self.write(self.html)
             else:
                 lf.notify(f"NO HTML GIVEN FOR PAGE '{self.name}'",lf.Warninglevels.ERROR)
+        if self.callback != "": self.callback()
 
 
-class LoginHandler(tornado.web.RequestHandler):
-    def initialize(self, ParentServer) -> None:
-        self.parent = ParentServer
-        self.test : str
-        print(self.test)
+class LoginPage(Page):
 
     def get(self) -> None:
-        self.write('<html><body><form action="/test" method="post">'
+        self.write('<html><body><form action="/login" method="post">'
                    'Name: <input type="text" name="name">'
                    '<input type="submit" value="Sign in">'
                    '</form></body></html>')
 
     def post(self) -> None:
         print(self.get_argument("name"))
-        self.redirect("/")
-        #self.set_secure_cookie("user", self.get_argument("name"))
-        #self.redirect("/")
+        self.set_secure_cookie("user", self.get_argument("name"))
+        self.redirect("/protected")
 
 class TestHandler(tornado.web.RequestHandler):
     def initialize(self, ParentServer) -> None:
