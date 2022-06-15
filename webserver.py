@@ -60,7 +60,7 @@ class Webserver(multiprocessing.Process):
         self.pages.append(page)
 
     # Adds a login and authorisation system to the webserver
-    def addLogin(self, page : pages.Page, html : str, CredCheckCallback = lambda: True):
+    def addLogin(self, html : str, CredCheckCallback = ""):
         page = (self.settings["login_url"], pages.LoginPage, dict(ParentServer=self, Credcheck=CredCheckCallback, HTML=html))
         self.pages.append(page)
 

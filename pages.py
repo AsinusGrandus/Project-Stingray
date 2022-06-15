@@ -41,15 +41,34 @@ class Page(BaseHandler):
 
 class LoginPage(Page):
 
+    def initialize(self, ParentServer, HTML, Credcheck) -> None:
+        self.ParentServer = ParentServer
+        self.html = HTML
+        self.Credcheck = Credcheck
+
     def get(self) -> None:
         self.write('<html><body><form action="/login" method="post">'
                    'Name: <input type="text" name="name">'
+                   'Password: <input type="password" name="password">'
                    '<input type="submit" value="Sign in">'
                    '</form></body></html>')
 
+        if (not self.current_user) and self.Protected:
+            if self.html != None:
+                if self.html[-5:] == ".html":
+                    self.render(self.html)
+                else:
+                    self.write(self.html)
+            else:
+                lf.notify(f"NO HTML GIVEN FOR PAGE '{self.name}'",lf.Warninglevels.ERROR)
+        else:
+            # redirect to protected page
+            print()
+
     def post(self) -> None:
         print(self.get_argument("name"))
-        self.set_secure_cookie("user", self.get_argument("name"))
+        if self.Credcheck() == True:
+            self.set_secure_cookie("user", self.get_argument("name"))
         self.redirect("/protected")
 
 class AuthPage(Page):
