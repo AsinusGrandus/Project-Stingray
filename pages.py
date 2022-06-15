@@ -10,6 +10,9 @@ class BaseHandler(tornado.web.RedirectHandler):
     def get_current_user(self):
         return self.get_secure_cookie("user")
 
+    def unauthorise_current_user(self):
+        self.clear_cookie("user")
+
 
 
 class Page(BaseHandler):
@@ -48,6 +51,18 @@ class LoginPage(Page):
         print(self.get_argument("name"))
         self.set_secure_cookie("user", self.get_argument("name"))
         self.redirect("/protected")
+
+class AuthPage(Page):
+    def initialize() -> None:
+        return
+    
+    def get(self) -> None:
+        if (not self.current_user):
+            # Authorise user
+            pass
+        else:
+            # Unauthorise user
+            self.unauthorise_current_user()
 
 class TestHandler(tornado.web.RequestHandler):
     def initialize(self, ParentServer) -> None:

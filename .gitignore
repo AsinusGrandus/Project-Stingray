@@ -59,3 +59,4 @@ SSL/key.pem
 SSL/cert.pem
 notes.txt
 Additional scripts/certgen.py
+testfiles/

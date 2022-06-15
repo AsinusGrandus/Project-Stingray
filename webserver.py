@@ -1,4 +1,5 @@
 # Standard libs
+from email.policy import default
 import multiprocessing
 import os
 
@@ -56,6 +57,11 @@ class Webserver(multiprocessing.Process):
     # Add a page to the webserver
     def addPage(self, page : pages.Page, url : str, html : str, name : str = "", protected : bool = False, callback = ""):
         page = (url, page, dict(ParentServer=self, Name=name, Protected=protected, Callback=callback, HTML=html))
+        self.pages.append(page)
+
+    # Adds a login and authorisation system to the webserver
+    def addLogin(self, page : pages.Page, html : str, CredCheckCallback = lambda: True):
+        page = (self.settings["login_url"], pages.LoginPage, dict(ParentServer=self, Credcheck=CredCheckCallback, HTML=html))
         self.pages.append(page)
 
     # Set a custom url for the login page
